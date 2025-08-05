@@ -9,7 +9,7 @@ public class Gun : MonoBehaviour
     [SerializeField] private GameObject bulletPrefabs;
     [SerializeField] private float shotDelay = 0.15f;
     private float nextShot;
-    [SerializeField] private int maxAnmo = -1;
+    [SerializeField] private int maxAnmo = 1;
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private AudioManager audioManager;
     [SerializeField] private float reloadTime = 1.5f; // Thời gian thay đạn
