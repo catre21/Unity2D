@@ -1,6 +1,6 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+
 public class player : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
@@ -11,12 +11,15 @@ public class player : MonoBehaviour
     private float currentHp;
     [SerializeField] private Image hpBar;
     [SerializeField] GameManager gameManager;
+    public Joystick joystick; // Tham chiếu tới Joystick UI
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
     }
+
     void Start()
     {
         currentHp = maxHp;
@@ -27,42 +30,38 @@ public class player : MonoBehaviour
     {
         MovePlayer();
         UpdateHpBar();
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             gameManager.PauseGameMenu();
         }
     }
-    void MovePlayer()
-    {
-        Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        rb.linearVelocity = playerInput.normalized * moveSpeed;
-        if (playerInput.x < 0)
-        {
-            spriteRenderer.flipX = true;
-        }
-        else if (playerInput.x > 0)
-        {
-            spriteRenderer.flipX = false;
-        }
-        if (playerInput != Vector2.zero)
-        {
-            animator.SetBool("isRun", true);
-        }
-        else
-        {
-            animator.SetBool("isRun", false);
-        }
-    }
+   
+
+ void MovePlayer()
+{
+    Vector2 moveInput = new Vector2(joystick.Horizontal, joystick.Vertical);
+    rb.linearVelocity = moveInput.normalized * moveSpeed;
+
+    if (moveInput.x < 0) spriteRenderer.flipX = true;
+    else if (moveInput.x > 0) spriteRenderer.flipX = false;
+
+    animator.SetBool("isRun", moveInput != Vector2.zero);
+}
+
+
     public void TakeDamage(float damage)
     {
         currentHp -= damage;
         currentHp = Mathf.Max(currentHp, 0);
         UpdateHpBar();
+
         if (currentHp <= 0)
         {
             Die();
         }
     }
+
     public void Heal(float healValue)
     {
         if (currentHp < maxHp)
@@ -70,16 +69,17 @@ public class player : MonoBehaviour
             currentHp += healValue;
             currentHp = Mathf.Min(currentHp, maxHp);
             UpdateHpBar();
-      }
+        }
     }
+
     private void Die()
     {
         gameManager.GameOverMenu();
     }
+
     private void UpdateHpBar()
     {
         if (hpBar != null)
-
         {
             hpBar.fillAmount = currentHp / maxHp;
         }

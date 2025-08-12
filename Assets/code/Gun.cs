@@ -1,84 +1,78 @@
+using UnityEngine;
 using System.Collections;
 using TMPro;
-using UnityEngine;
 
 public class Gun : MonoBehaviour
 {
-    private float rotateOffset = 180f;
-    [SerializeField] private Transform firePos;
-    [SerializeField] private GameObject bulletPrefabs;
+    [SerializeField] private Transform firePoint;
+    [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private float bulletSpeed = 10f;
     [SerializeField] private float shotDelay = 0.15f;
-    private float nextShot;
-    [SerializeField] private int maxAnmo = 1;
+    [SerializeField] private int maxAmmo = 10;
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private AudioManager audioManager;
-    [SerializeField] private float reloadTime = 1.5f; // Thời gian thay đạn
-    public int currentAnmo;
+    [SerializeField] private float reloadTime = 1.5f;
 
-    private bool isReloading = false; // Đang reload?
+    private float nextShot;
+    private int currentAmmo;
+    private bool isReloading = false;
 
     void Start()
     {
-        currentAnmo = maxAnmo;
+        currentAmmo = maxAmmo;
         UpdateAmmoText();
     }
 
     void Update()
     {
-        if (isReloading) return; // Nếu đang thay đạn thì không xoay & bắn
+        if (isReloading) return;
 
-        RotateGun();
-        Shoot();
-        Reload();
+        if (Input.GetMouseButton(0))
+        {
+            Vector3 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            touchPos.z = 0;
+
+            RotateGunTowards(touchPos);
+            Shoot();
+        }
     }
 
-    void RotateGun()
+    void RotateGunTowards(Vector3 targetPos)
     {
-        if (Input.mousePosition.x < 0 || Input.mousePosition.x > Screen.width ||
-            Input.mousePosition.y < 0 || Input.mousePosition.y > Screen.height)
-        {
-            return;
-        }
-
-        Vector3 displacement = transform.position - Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        float angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0, 0, angle + rotateOffset);
-
-        if (angle < -90 || angle > 90)
-            transform.localScale = new Vector3(1, 1, 1);
-        else
-            transform.localScale = new Vector3(1, -1, 1);
+        Vector3 direction = targetPos - transform.position;
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
     void Shoot()
     {
-        if (Input.GetMouseButton(0) && currentAnmo > 0 && Time.time > nextShot)
-        {
-            nextShot = Time.time + shotDelay;
-            Instantiate(bulletPrefabs, firePos.position, firePos.rotation);
-            currentAnmo--;
-            UpdateAmmoText();
-            audioManager.PlayShootSound();
-        }
-    }
-
-    void Reload()
-    {
-        if (Input.GetMouseButtonDown(1) && currentAnmo < maxAnmo)
+        if (Time.time < nextShot) return;
+        if (currentAmmo <= 0)
         {
             StartCoroutine(ReloadCoroutine());
+            return;
         }
+
+        nextShot = Time.time + shotDelay;
+
+        GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
+        rb.linearVelocity = firePoint.right * bulletSpeed;
+
+        currentAmmo--;
+        UpdateAmmoText();
+
+        if (audioManager != null) audioManager.PlayShootSound();
     }
 
     IEnumerator ReloadCoroutine()
     {
         isReloading = true;
-        audioManager.PlayReLoadSound();
-        Debug.Log("Reloading...");
+        if (audioManager != null) audioManager.PlayReLoadSound();
 
         yield return new WaitForSeconds(reloadTime);
 
-        currentAnmo = maxAnmo;
+        currentAmmo = maxAmmo;
         UpdateAmmoText();
         isReloading = false;
     }
@@ -86,8 +80,6 @@ public class Gun : MonoBehaviour
     private void UpdateAmmoText()
     {
         if (ammoText != null)
-            ammoText.text = currentAnmo.ToString();
-        else
-            ammoText.text = "Empty";
+            ammoText.text = currentAmmo.ToString();
     }
 }
