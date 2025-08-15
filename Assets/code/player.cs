@@ -38,8 +38,10 @@ public class player : MonoBehaviour
     }
    
 
- void MovePlayer()
+void MovePlayer()
 {
+    if (joystick == null) return; // Nếu chưa gán joystick thì không làm gì
+
     Vector2 moveInput = new Vector2(joystick.Horizontal, joystick.Vertical);
     rb.linearVelocity = moveInput.normalized * moveSpeed;
 
@@ -48,6 +50,7 @@ public class player : MonoBehaviour
 
     animator.SetBool("isRun", moveInput != Vector2.zero);
 }
+
 
 
     public void TakeDamage(float damage)
