@@ -11,7 +11,6 @@ public class player : MonoBehaviour
     private float currentHp;
     [SerializeField] private Image hpBar;
     [SerializeField] GameManager gameManager;
-    public Joystick joystick; // Tham chiếu tới Joystick UI
 
     private void Awake()
     {
@@ -36,22 +35,22 @@ public class player : MonoBehaviour
             gameManager.PauseGameMenu();
         }
     }
-   
 
-void MovePlayer()
-{
-    if (joystick == null) return; // Nếu chưa gán joystick thì không làm gì
+    void MovePlayer()
+    {
+        // Lấy input từ bàn phím (PC)
+        Vector2 moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
-    Vector2 moveInput = new Vector2(joystick.Horizontal, joystick.Vertical);
-    rb.linearVelocity = moveInput.normalized * moveSpeed;
+        // Gán vận tốc cho Rigidbody2D
+        rb.velocity = moveInput.normalized * moveSpeed;
 
-    if (moveInput.x < 0) spriteRenderer.flipX = true;
-    else if (moveInput.x > 0) spriteRenderer.flipX = false;
+        // Lật sprite khi đi trái/phải
+        if (moveInput.x < 0) spriteRenderer.flipX = true;
+        else if (moveInput.x > 0) spriteRenderer.flipX = false;
 
-    animator.SetBool("isRun", moveInput != Vector2.zero);
-}
-
-
+        // Bật animation chạy
+        animator.SetBool("isRun", moveInput != Vector2.zero);
+    }
 
     public void TakeDamage(float damage)
     {
