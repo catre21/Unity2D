@@ -1,21 +1,18 @@
 using UnityEngine;
-using System.Collections;
 using TMPro;
 
 public class Gun : MonoBehaviour
 {
-    [SerializeField] private Transform firePoint;
-    [SerializeField] private GameObject bulletPrefab;
-    [SerializeField] private float bulletSpeed = 10f;
-    [SerializeField] private float shotDelay = 0.15f;
-    [SerializeField] private int maxAmmo = 10;
+    private float rotationOffset = 180f;
+    [SerializeField] private Transform firePos;
+    [SerializeField] private GameObject bulletPrefabs;
+    [SerializeField] private float shootDelay = 0.15f;
+    [SerializeField] private int maxAmmo = 24;
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private AudioManager audioManager;
-    [SerializeField] private float reloadTime = 1.5f;
 
     private float nextShot;
-    private int currentAmmo;
-    private bool isReloading = false;
+    public int currentAmmo;
 
     void Start()
     {
@@ -25,61 +22,58 @@ public class Gun : MonoBehaviour
 
     void Update()
     {
-        if (isReloading) return;
-
-        if (Input.GetMouseButton(0))
-        {
-            Vector3 touchPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            touchPos.z = 0;
-
-            RotateGunTowards(touchPos);
-            Shoot();
-        }
+        RotateGun();
+        Shoot();
+        Reload();
     }
 
-    void RotateGunTowards(Vector3 targetPos)
+    void RotateGun()
     {
-        Vector3 direction = targetPos - transform.position;
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0, 0, angle);
+        if (Input.mousePosition.x < 0 || Input.mousePosition.x > Screen.width ||
+            Input.mousePosition.y < 0 || Input.mousePosition.y > Screen.height)
+        {
+            return;
+        }
+
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 displacement = mousePos - transform.position;
+        float angle = Mathf.Atan2(displacement.y, displacement.x) * Mathf.Rad2Deg;
+
+        transform.rotation = Quaternion.Euler(0, 0, angle + rotationOffset);
+
+        if (angle < -90 || angle > 90)
+            transform.localScale = new Vector3(1, -1, 1);
+        else
+            transform.localScale = new Vector3(1, 1, 1);
     }
 
     void Shoot()
     {
-        if (Time.time < nextShot) return;
-        if (currentAmmo <= 0)
+        if (Input.GetMouseButtonDown(0) && currentAmmo > 0 && Time.time > nextShot)
         {
-            StartCoroutine(ReloadCoroutine());
-            return;
+            nextShot = Time.time + shootDelay;
+            Instantiate(bulletPrefabs, firePos.position, firePos.rotation);
+            currentAmmo--;
+            UpdateAmmoText();
+            audioManager.PlayShootSound();
         }
-
-        nextShot = Time.time + shotDelay;
-
-        GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
-        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
-        rb.linearVelocity = firePoint.right * bulletSpeed;
-
-        currentAmmo--;
-        UpdateAmmoText();
-
-        if (audioManager != null) audioManager.PlayShootSound();
     }
 
-    IEnumerator ReloadCoroutine()
+    void Reload()
     {
-        isReloading = true;
-        if (audioManager != null) audioManager.PlayReLoadSound();
-
-        yield return new WaitForSeconds(reloadTime);
-
-        currentAmmo = maxAmmo;
-        UpdateAmmoText();
-        isReloading = false;
+        if (Input.GetMouseButton(1) && currentAmmo < maxAmmo)
+        {
+            currentAmmo = maxAmmo;
+            UpdateAmmoText();
+            
+        }
     }
 
     private void UpdateAmmoText()
     {
         if (ammoText != null)
-            ammoText.text = currentAmmo.ToString();
+        {
+            ammoText.text = currentAmmo > 0 ? currentAmmo.ToString() : "Empty";
+        }
     }
 }

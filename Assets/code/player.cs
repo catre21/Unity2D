@@ -42,7 +42,7 @@ public class player : MonoBehaviour
         Vector2 moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
         // Gán vận tốc cho Rigidbody2D
-        rb.velocity = moveInput.normalized * moveSpeed;
+        rb.linearVelocity = moveInput.normalized * moveSpeed;
 
         // Lật sprite khi đi trái/phải
         if (moveInput.x < 0) spriteRenderer.flipX = true;
